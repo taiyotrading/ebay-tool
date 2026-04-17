@@ -1,0 +1,300 @@
+# index.html を作成
+@"
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eBay Profit Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .result-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .profit {
+            color: #28a745;
+        }
+        
+        .loss {
+            color: #dc3545;
+        }
+        
+        .error {
+            color: #dc3545;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 eBay Profit Analyzer</h1>
+        
+        <form id="analyzerForm">
+            <div class="form-group">
+                <label for="itemPrice">商品価格（USD）</label>
+                <input type="number" id="itemPrice" placeholder="49.99" step="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="shippingCost">送料（USD）</label>
+                <input type="number" id="shippingCost" placeholder="10.00" step="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="totalCost">仕入原価（USD）</label>
+                <input type="number" id="totalCost" placeholder="20.00" step="0.01" required>
+            </div>
+            
+            <button type="submit">分析する</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>計算中...</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            <div class="result-item">
+                <div class="result-label">売上金額</div>
+                <div class="result-value">$<span id="revenue">0.00</span></div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">総コスト</div>
+                <div class="result-value">$<span id="totalExpense">0.00</span></div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">利益</div>
+                <div class="result-value" id="profitDisplay">$<span id="profit">0.00</span></div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">利益率</div>
+                <div class="result-value" id="marginDisplay"><span id="margin">0.00</span>%</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Vercel API URL
+        const API_URL = 'https://ebay-analyzer-seven.vercel.app/api/analyze';
+        
+        const form = document.getElementById('analyzerForm');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const itemPrice = parseFloat(document.getElementById('itemPrice').value);
+            const shippingCost = parseFloat(document.getElementById('shippingCost').value);
+            const totalCost = parseFloat(document.getElementById('totalCost').value);
+            
+            // エラーをリセット
+            error.classList.remove('show');
+            result.classList.remove('show');
+            
+            // ローディング表示
+            loading.classList.add('show');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        item_price: itemPrice,
+                        shipping_cost: shippingCost,
+                        total_cost: totalCost
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API エラー: ' + response.statusText);
+                }
+                
+                const data = await response.json();
+                
+                // 結果を表示
+                document.getElementById('revenue').textContent = data.revenue.toFixed(2);
+                document.getElementById('totalExpense').textContent = data.total_expense.toFixed(2);
+                document.getElementById('profit').textContent = data.profit.toFixed(2);
+                document.getElementById('margin').textContent = data.margin.toFixed(2);
+                
+                // 利益/損失で色分け
+                const profitDisplay = document.getElementById('profitDisplay');
+                const marginDisplay = document.getElementById('marginDisplay');
+                
+                if (data.profit >= 0) {
+                    profitDisplay.classList.remove('loss');
+                    profitDisplay.classList.add('profit');
+                    marginDisplay.classList.remove('loss');
+                    marginDisplay.classList.add('profit');
+                } else {
+                    profitDisplay.classList.remove('profit');
+                    profitDisplay.classList.add('loss');
+                    marginDisplay.classList.remove('profit');
+                    marginDisplay.classList.add('loss');
+                }
+                
+                result.classList.add('show');
+                
+            } catch (err) {
+                error.textContent = '❌ エラーが発生しました: ' + err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
+"@ | Out-File -Encoding UTF8NoBOM index.html
