@@ -1,14 +1,13 @@
-// Service Worker - オフライン対応
 const CACHE_NAME = 'ebay-tool-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/script.js',
-  '/manifest.json'
+  '/ebay-tool/',
+  '/ebay-tool/index.html',
+  '/ebay-tool/styles.css',
+  '/ebay-tool/script.js',
+  '/ebay-tool/manifest.json'
 ];
 
-// インストール時にキャッシュ
+// Install event - cache files
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -16,43 +15,12 @@ self.addEventListener('install', event => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
+      .catch(err => console.log('Cache addAll error:', err))
   );
+  self.skipWaiting();
 });
 
-// リクエスト時はキャッシュから取得、なければネットワークから
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // キャッシュがあればそれを返す
-        if (response) {
-          return response;
-        }
-        
-        // なければネットワークから取得
-        return fetch(event.request).then(response => {
-          // 動的キャッシュ
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-          
-          return response;
-        });
-      })
-      .catch(() => {
-        // オフライン時の代替ページ
-        return new Response('オフラインです。インターネット接続を確認してください。');
-      })
-  );
-});
-
-// アクティベーション時に古いキャッシュを削除
+// Activate event - clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -64,5 +32,36 @@ self.addEventListener('activate', event => {
         })
       );
     })
+  );
+  self.clients.claim();
+});
+
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request)
+          .then(response => {
+            // Don't cache non-successful responses
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            // Clone the response
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+            return response;
+          });
+      })
+      .catch(() => {
+        // Return offline page if needed
+        return caches.match('/ebay-tool/index.html');
+      })
   );
 });

@@ -1,98 +1,81 @@
-// ステータスバーの更新
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
+// Constants
+const CURRENCY_RATE = 150; // 1 USD = 150 JPY
+const EBAY_FEE_RATE = 0.125; // 12.5%
+const IMPORT_TAX_RATE = 0.08; // 8%
 
-function updateOnlineStatus() {
-    const statusBar = document.getElementById('status');
-    if (navigator.onLine) {
-        statusBar.textContent = '🌐 オンライン';
-        statusBar.className = 'status-bar online';
-    } else {
-        statusBar.textContent = '📴 オフライン';
-        statusBar.className = 'status-bar offline';
-    }
+// Get DOM elements
+const itemPriceInput = document.getElementById('itemPrice');
+const shippingCostInput = document.getElementById('shippingCost');
+const quantityInput = document.getElementById('quantity');
+
+const priceJPYDisplay = document.getElementById('priceJPY');
+const shippingJPYDisplay = document.getElementById('shippingJPY');
+const totalCostDisplay = document.getElementById('totalCost');
+const ebayFeeDisplay = document.getElementById('ebayFee');
+const importTaxDisplay = document.getElementById('importTax');
+const totalExpenseDisplay = document.getElementById('totalExpense');
+const profitPerUnitDisplay = document.getElementById('profitPerUnit');
+const totalProfitDisplay = document.getElementById('totalProfit');
+const profitMarginDisplay = document.getElementById('profitMargin');
+
+// Event listeners
+itemPriceInput.addEventListener('input', calculate);
+shippingCostInput.addEventListener('input', calculate);
+quantityInput.addEventListener('input', calculate);
+
+// Format number as Japanese currency
+function formatJPY(amount) {
+    return new Intl.NumberFormat('ja-JP', {
+        style: 'currency',
+        currency: 'JPY',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
 }
 
-// Service Worker 登録
+// Main calculation function
+function calculate() {
+    // Get input values
+    const itemPrice = parseFloat(itemPriceInput.value) || 0;
+    const shippingCost = parseFloat(shippingCostInput.value) || 0;
+    const quantity = parseInt(quantityInput.value) || 1;
+
+    // Convert to JPY
+    const priceJPY = itemPrice * CURRENCY_RATE;
+    const shippingJPY = shippingCost * CURRENCY_RATE;
+
+    // Calculate total cost per unit
+    const totalCostPerUnit = priceJPY + shippingJPY;
+    const totalCost = totalCostPerUnit * quantity;
+
+    // Calculate fees
+    const ebayFee = totalCost * EBAY_FEE_RATE;
+    const importTax = totalCost * IMPORT_TAX_RATE;
+    const totalExpense = totalCost + ebayFee + importTax;
+
+    // Calculate profit
+    const profitPerUnit = totalCostPerUnit - (totalCostPerUnit * EBAY_FEE_RATE) - (totalCostPerUnit * IMPORT_TAX_RATE);
+    const totalProfit = profitPerUnit * quantity;
+    const profitMargin = totalCostPerUnit > 0 ? (profitPerUnit / totalCostPerUnit * 100) : 0;
+
+    // Display results
+    priceJPYDisplay.textContent = formatJPY(priceJPY);
+    shippingJPYDisplay.textContent = formatJPY(shippingJPY);
+    totalCostDisplay.textContent = formatJPY(totalCost);
+    ebayFeeDisplay.textContent = formatJPY(ebayFee);
+    importTaxDisplay.textContent = formatJPY(importTax);
+    totalExpenseDisplay.textContent = formatJPY(totalExpense);
+    profitPerUnitDisplay.textContent = formatJPY(profitPerUnit);
+    totalProfitDisplay.textContent = formatJPY(totalProfit);
+    profitMarginDisplay.textContent = profitMargin.toFixed(1) + '%';
+}
+
+// Register service worker for PWA
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-            .then(registration => {
-                console.log('Service Worker 登録成功:', registration);
-            })
-            .catch(error => {
-                console.log('Service Worker 登録失敗:', error);
-            });
-    });
+    navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed'));
 }
 
-async function search() {
-    const keyword = document.getElementById('keyword').value;
-    const country = document.getElementById('country').value;
-    const resultsDiv = document.getElementById('results');
-    const loading = document.getElementById('loading');
-    
-    if (!keyword.trim()) {
-        alert('キーワードを入力してください');
-        return;
-    }
-    
-    loading.style.display = 'block';
-    resultsDiv.innerHTML = '';
-    
-    try {
-        const response = await fetch('./api/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ keyword, country })
-        });
-        
-        const data = await response.json();
-        loading.style.display = 'none';
-        
-        if (data.status === 'success') {
-            displayResults(data.results);
-        } else {
-            resultsDiv.innerHTML = `<div class="error">❌ エラー: ${data.message}</div>`;
-        }
-    } catch (error) {
-        loading.style.display = 'none';
-        resultsDiv.innerHTML = `<div class="error">❌ エラー: ${error.message}</div>`;
-    }
-}
-
-function displayResults(results) {
-    const resultsDiv = document.getElementById('results');
-    
-    if (results.length === 0) {
-        resultsDiv.innerHTML = '<div class="error">結果が見つかりませんでした</div>';
-        return;
-    }
-    
-    let html = '';
-    results.forEach((item, index) => {
-        const scoreClass = item.score >= 150 ? 'score-good' : 'score-bad';
-        html += `
-            <div class="result-item">
-                <div class="item-title">📦 ${index + 1}. ${item.title}</div>
-                <div class="item-price">💵 $${item.price}</div>
-                <div class="item-profit">💰 利益: ¥${Math.round(item.profit)}</div>
-                <div class="item-rate">📊 利益率: ${(item.profit_rate * 100).toFixed(1)}%</div>
-                <div class="item-score ${scoreClass}">
-                    ⭐ スコア: ${item.score.toFixed(2)} - ${item.rating}
-                </div>
-            </div>
-        `;
-    });
-    
-    resultsDiv.innerHTML = html;
-}
-
-document.getElementById('keyword').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') search();
-});
-
-// 初期表示
-updateOnlineStatus();
+// Initial calculation
+calculate();
