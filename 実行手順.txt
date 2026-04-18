@@ -1,0 +1,2 @@
+PS C:\Users\yoshi\OneDrive\Desktop> cd ebay_tool
+PS C:\Users\yoshi\OneDrive\Desktop\ebay_tool> python app.py

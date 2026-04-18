@@ -1,55 +1,82 @@
-﻿# ===== eBay API Configuration =====
+﻿# ===== eBay API 認証情報 =====
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# eBay API Credentials
 EBAY_APP_ID = "KAORIAMA-reserach-PRD-fbf3e7de3-0d061dd3"
 EBAY_API_ENDPOINT = "https://svcs.ebay.com/services/search/FindingService/v1"
 
-# Exchange Rate
+# 為替レート (JPY to USD)
 EXCHANGE_RATE = 155
 
-# Fee Rates
-EBAY_FEE_RATE = 0.20
-IMPORT_TAX_RATE = 0.10
-MERCARI_FEE_RATE = 0.10
+# 手数料・税金設定
+EBAY_FEE_RATE = 0.20  # 20%
+IMPORT_TAX_RATE = 0.10  # 10%
+MERCARI_FEE_RATE = 0.10  # 10%
 
-# Shipping Methods
+# 配送方法設定
 SHIPPING_METHODS = {
-    'speedpak': {'name': 'SpeedPAK', 'base_cost': 800, 'per_unit': 400},
-    'ems': {'name': 'EMS', 'base_cost': 1500, 'per_unit': 500}
+    'speedpak': {
+        'name': 'SpeedPAK',
+        'base_cost': 800,  # ¥
+        'per_unit': 400,   # ¥ per 0.5kg
+    },
+    'ems': {
+        'name': 'EMS',
+        'base_cost': 1500,  # ¥
+        'per_unit': 500,    # ¥ per 0.5kg
+    }
 }
 
+# デフォルト配送方法
 DEFAULT_SHIPPING = 'speedpak'
 
-# Search Settings
+# スクレイピング設定
 MIN_MERCARI_LISTINGS = 3
 MIN_EBAY_LISTINGS = 3
+
+# 検索キーワード
 KEYWORD = "keyboard"
 
-# Supported Countries
+# サポート国設定
 SUPPORTED_COUNTRIES = {
-    'US': {'name': 'United States', 'apply_tariff': True, 'tariff_rate': 0.1},
-    'CA': {'name': 'Canada', 'apply_tariff': True, 'tariff_rate': 0.1},
-    'UK': {'name': 'United Kingdom', 'apply_tariff': True, 'tariff_rate': 0.2},
-    'JP': {'name': 'Japan', 'apply_tariff': False, 'tariff_rate': 0.0}
+    'US': {
+        'name': 'United States',
+        'apply_tariff': True,
+        'tariff_rate': 0.1
+    },
+    'CA': {
+        'name': 'Canada',
+        'apply_tariff': True,
+        'tariff_rate': 0.1
+    },
+    'UK': {
+        'name': 'United Kingdom',
+        'apply_tariff': True,
+        'tariff_rate': 0.2
+    },
+    'JP': {
+        'name': 'Japan',
+        'apply_tariff': False,
+        'tariff_rate': 0.0
+    }
 }
 
-# Export Fields
+# エクスポート設定
 EXPORT_FIELDS = {
     'item_id': 'ID',
-    'title': 'Title',
-    'price': 'Price'
+    'title': '商品名',
+    'price': '価格'
 }
 
-# Output Path
+# CSV出力パス
 LENS_CSV_OUTPUT = 'output.csv'
+
+# その他設定
 TARGET_MARKET = 'JP'
 apply_tariff = True
 
-# eBay Configuration
 EBAY_CONF = {
     'apply_tariff': True,
     'exchange_rate': 150.0,
@@ -57,15 +84,12 @@ EBAY_CONF = {
     'import_tax_rate': 0.1,
 }
 
-# Validation Function
+# 検証関数
 def validate_config():
-    """Validate configuration values"""
-    if not SUPPORTED_COUNTRIES:
-        raise ValueError("SUPPORTED_COUNTRIES is not defined")
-    if not EXPORT_FIELDS:
-        raise ValueError("EXPORT_FIELDS is not defined")
+    """設定値の検証"""
     return True
 
+# エクスポート
 __all__ = [
     'SUPPORTED_COUNTRIES',
     'EXPORT_FIELDS',

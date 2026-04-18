@@ -1,0 +1,18 @@
+[
+  {
+    "item_id": "1000",
+    "title": "12",
+    "current_price_usd": 12.0,
+    "weight_kg": 1.0,
+    "seller_country": "US",
+    "is_ddp": true,
+    "purchase_price_jpy": 1800.0,
+    "shipping_cost": 900,
+    "tariff": 0,
+    "total_cost_jpy": 2700.0,
+    "sales_price_jpy": 3645.0,
+    "profit_jpy": 945.0,
+    "margin_pct": 35.0,
+    "rank": "🔥 推奨"
+  }
+]
