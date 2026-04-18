@@ -1,6 +1,7 @@
-# 環境変数
+﻿# 環境変数
 .env
 .env.local
+.env.backup
 
 # ログ
 logs/
@@ -18,3 +19,16 @@ Thumbs.db
 
 # CSV出力
 *.csv
+
+# セキュリティ関連
+ebay_token.py
+get.py
+token.txt
+test_*.py
+analysis_results.json
+results_*.json
+
+# Python
+*.egg-info/
+dist/
+build/
